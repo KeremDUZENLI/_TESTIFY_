@@ -15,15 +15,7 @@ const (
 	dbName     = "db_testify"
 )
 
-func DbOperation() *sql.DB {
-	db := dbConnect()
-	dbCreateTable(db)
-	dbSeedTable(db)
-
-	return db
-}
-
-func dbConnect() *sql.DB {
+func DbConnect() *sql.DB {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		dbHost, dbPort, dbUser, dbPassword, dbName)
 
@@ -35,7 +27,7 @@ func dbConnect() *sql.DB {
 	return db
 }
 
-func dbCreateTable(db *sql.DB) {
+func DbCreateTable(db *sql.DB) {
 	stmt, err := db.Prepare(
 		`CREATE TABLE IF NOT EXISTS stockprices (
 		timestamp TIMESTAMPTZ PRIMARY KEY,
@@ -47,7 +39,7 @@ func dbCreateTable(db *sql.DB) {
 	helper.ErrorLog(err)
 }
 
-func dbSeedTable(db *sql.DB) {
+func DbSeedTable(db *sql.DB) {
 	var rowCount int
 	db.QueryRow("SELECT COUNT(*) FROM stockprices").Scan(&rowCount)
 

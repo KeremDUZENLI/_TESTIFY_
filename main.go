@@ -11,9 +11,11 @@ import (
 )
 
 func main() {
-	db := database.DbOperation()
-	res := model.NewPriceProvider(db)
+	db := database.DbConnect()
+	database.DbCreateTable(db)
+	database.DbSeedTable(db)
 
+	res := model.NewPriceProvider(db)
 	latest, _ := res.Latest()
 	latestListe, _ := res.List(time.Now())
 
