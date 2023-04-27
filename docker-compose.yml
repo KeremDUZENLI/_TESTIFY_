@@ -1,0 +1,13 @@
+version: '3.5'
+
+services:
+  postgres:
+    container_name: container_testify
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: user_testify
+      POSTGRES_PASSWORD: password_testify
+      POSTGRES_DB: db_testify
+    ports:
+      - "5402:5432"
