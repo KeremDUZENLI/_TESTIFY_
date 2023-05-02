@@ -14,6 +14,7 @@ func main() {
 	db := database.DbConnect()
 	database.DbCreateTable(db)
 	database.DbSeedTable(db)
+	database.DbCreateExtra(db)
 
 	res := model.NewPriceProvider(db)
 	latest, _ := res.Latest()

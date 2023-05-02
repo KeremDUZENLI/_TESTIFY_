@@ -12,12 +12,19 @@ const (
 	dbPort     = 5402
 	dbUser     = "user_testify"
 	dbPassword = "password_testify"
-	dbName     = "db_testify"
+	dbName     = "postgres"
 )
 
-func DbConnect() *sql.DB {
+func DbConnect(args ...string) *sql.DB {
+	var databaseName string
+	if args == nil {
+		databaseName = dbName
+	} else {
+		databaseName = args[0]
+	}
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
+		dbHost, dbPort, dbUser, dbPassword, databaseName)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	helper.ErrorLog(err)
@@ -48,5 +55,12 @@ func DbSeedTable(db *sql.DB) {
 			db.Exec("INSERT INTO stockprices (timestamp, price) VALUES ($1,$2)",
 				time.Now().Add(time.Duration(-i)*time.Minute), float64((6-i)*5))
 		}
+	}
+}
+
+func DbCreateExtra(db *sql.DB) {
+	_, err := db.Exec(`CREATE DATABASE postgres_test`)
+	if err != nil {
+		println(err.Error())
 	}
 }

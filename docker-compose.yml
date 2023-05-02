@@ -8,6 +8,6 @@ services:
     environment:
       POSTGRES_USER: user_testify
       POSTGRES_PASSWORD: password_testify
-      POSTGRES_DB: db_testify
+      POSTGRES_DB: postgres
     ports:
       - "5402:5432"

@@ -22,39 +22,26 @@ func TestIntTestSuite(t *testing.T) {
 }
 
 func (its *IntTestSuite) SetupSuite() {
-	db := database.DbConnect()
+	its.db = database.DbConnect("stockprices_test")
+	database.DbCreateTable(its.db)
 
-	dbCreateTableTest(db)
-	database.DbCreateTable(db)
-
-	mp := model.NewPriceProvider(db)
-	priceIncrease := NewPriceIncrease(mp)
-
-	its.db = db
-	its.priceIncrease = priceIncrease
+	priceProvider := model.NewPriceProvider(its.db)
+	its.priceIncrease = NewPriceIncrease(priceProvider)
 }
 
 func (its *IntTestSuite) BeforeTest(suiteName, testName string) {
 	if testName == "TestPriceIncrease_Error" {
 		return
 	}
-
 	database.DbSeedTable(its.db)
-}
-
-func (its *IntTestSuite) TearDownSuite() {
-	tearDownDatabase(its)
 }
 
 func (its *IntTestSuite) TearDownTest() {
 	cleanTable(its)
 }
 
-func (its *IntTestSuite) TestPriceIncrease_Error() {
-	percentage, err := its.priceIncrease.PriceIncrease()
-
-	its.EqualError(err, "not enough data")
-	its.Equal(0.0, percentage)
+func (its *IntTestSuite) TearDownSuite() {
+	tearDownDatabase(its)
 }
 
 func (its *IntTestSuite) TestPriceIncrease() {
@@ -64,29 +51,26 @@ func (its *IntTestSuite) TestPriceIncrease() {
 	its.Equal(25.0, percentage)
 }
 
-func dbCreateTableTest(db *sql.DB) {
-	println("setting up database")
+func (its *IntTestSuite) TestPriceIncrease_Error() {
+	percentage, err := its.priceIncrease.PriceIncrease()
 
-	_, err := db.Exec(`CREATE DATABASE stockprices_test`)
-	helper.ErrorIts(err)
+	its.EqualError(err, "not enough data")
+	its.Equal(0.0, percentage)
 }
 
 func cleanTable(its *IntTestSuite) {
-	println("cleaning up table")
-
 	_, err := its.db.Exec(`DELETE FROM stockprices`)
 	helper.ErrorIts(err)
 }
 
 func tearDownDatabase(its *IntTestSuite) {
-	println("drop table & database")
-
 	_, err := its.db.Exec(`DROP TABLE stockprices`)
-	helper.ErrorIts(err)
-
-	_, err = its.db.Exec(`DROP DATABASE stockprices_test`)
-	helper.ErrorIts(err)
+	if err != nil {
+		helper.ErrorIts(err)
+	}
 
 	err = its.db.Close()
-	helper.ErrorIts(err)
+	if err != nil {
+		helper.ErrorIts(err)
+	}
 }

@@ -10,13 +10,6 @@ const (
 	dateFormat = "2006-01-02"
 )
 
-var (
-	data      Data
-	timestamp time.Time
-	price     float64
-	listeData []*Data = make([]*Data, 0)
-)
-
 type Data struct {
 	Timestamp time.Time
 	Price     float64
@@ -40,6 +33,7 @@ func NewPriceProvider(db *sql.DB) PriceProvider {
 }
 
 func (p *priceProvider) Latest() (*Data, error) {
+	var data Data
 	err := p.db.
 		QueryRow("SELECT * FROM stockprices ORDER BY timestamp DESC limit 1").
 		Scan(&data.Timestamp, &data.Price)
@@ -50,6 +44,10 @@ func (p *priceProvider) Latest() (*Data, error) {
 }
 
 func (p *priceProvider) List(date time.Time) ([]*Data, error) {
+	var listeData []*Data = make([]*Data, 0)
+	var timestamp time.Time
+	var price float64
+
 	rows, _ := p.db.Query("SELECT * FROM stockprices where timestamp::date = $1 ORDER BY timestamp DESC",
 		date.Format(dateFormat))
 
