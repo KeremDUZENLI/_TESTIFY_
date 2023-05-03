@@ -36,9 +36,8 @@ func (p *priceProvider) List(date time.Time) ([]*timeAndPrice, error) {
 	helper.ErrorLog(err)
 
 	for rows.Next() {
-		if err := rows.Scan(&timestamp, &price); err != nil {
-			helper.ErrorLog(err)
-		}
+		err := rows.Scan(&timestamp, &price)
+		helper.ErrorLog(err)
 
 		listeData = append(listeData, &timeAndPrice{
 			Timestamp: timestamp,

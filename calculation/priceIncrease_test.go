@@ -24,13 +24,10 @@ func TestIntTestSuite(t *testing.T) {
 }
 
 func (its *IntTestSuite) SetupSuite() {
-	env.Load(1)
+	setDatabase(its)
 
-	its.databasePostgre = database.DbConnect("postgres_test")
 	priceProvider := model.NewPriceProvider(its.databasePostgre)
 	its.priceIncrease = NewPriceIncrease(priceProvider)
-
-	database.DbCreateTable()
 }
 
 func (its *IntTestSuite) BeforeTest(suiteName, testName string) {
@@ -40,11 +37,15 @@ func (its *IntTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (its *IntTestSuite) TearDownTest() {
-	cleanTable(its)
+	cleanTableTest(its)
 }
 
 func (its *IntTestSuite) TearDownSuite() {
-	dropTable(its)
+	dropTableTest(its)
+	closeConnection(its)
+
+	dbConnect(its)
+	dropDatabaseTest(its)
 	closeConnection(its)
 }
 
@@ -63,16 +64,42 @@ func (its *IntTestSuite) TestPriceIncrease_Error() {
 }
 
 // ----------------------------------------------------------------
-func cleanTable(its *IntTestSuite) {
+func setDatabase(its *IntTestSuite) {
+	dbConnect(its)
+	createDatabaseTest(its)
+
+	dbConnectTest(its)
+	database.DbCreateTable()
+}
+
+func dbConnect(its *IntTestSuite) {
+	env.Load(1)
+	its.databasePostgre = database.DbConnect()
+}
+
+func dbConnectTest(its *IntTestSuite) {
+	env.Load(1)
+	its.databasePostgre = database.DbConnect("postgres_test")
+}
+
+func createDatabaseTest(its *IntTestSuite) {
+	_, err := its.databasePostgre.Exec(`CREATE DATABASE postgres_test`)
+	helper.ErrorPrint(err)
+}
+
+func cleanTableTest(its *IntTestSuite) {
 	_, err := its.databasePostgre.Exec(`DELETE FROM stockprices`)
 	helper.ErrorSuite(err)
 }
 
-func dropTable(its *IntTestSuite) {
+func dropTableTest(its *IntTestSuite) {
 	_, err := its.databasePostgre.Exec(`DROP TABLE stockprices`)
-	if err != nil {
-		helper.ErrorSuite(err)
-	}
+	helper.ErrorSuite(err)
+}
+
+func dropDatabaseTest(its *IntTestSuite) {
+	_, err := its.databasePostgre.Exec(`DROP DATABASE postgres_test`)
+	helper.ErrorSuite(err)
 }
 
 func closeConnection(its *IntTestSuite) {

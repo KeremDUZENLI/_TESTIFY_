@@ -55,8 +55,3 @@ func DbSeedTable() {
 		}
 	}
 }
-
-func DbCreateExtra() {
-	_, err := postgreDB.Exec(`CREATE DATABASE postgres_test`)
-	helper.ErrorPrint(err)
-}

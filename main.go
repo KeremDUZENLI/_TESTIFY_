@@ -29,7 +29,6 @@ func setDatabase() *sql.DB {
 	db := database.DbConnect()
 	database.DbCreateTable()
 	database.DbSeedTable()
-	database.DbCreateExtra()
 
 	return db
 }
