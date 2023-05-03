@@ -1,30 +1,24 @@
 package database
 
 import (
+	"testify/common/env"
+	"testify/common/helper"
+
 	"database/sql"
 	"fmt"
-	"testify/helper"
 	"time"
-)
-
-const (
-	dbHost     = "192.168.3.204"
-	dbPort     = 5402
-	dbUser     = "user_testify"
-	dbPassword = "password_testify"
-	dbName     = "postgres"
 )
 
 func DbConnect(args ...string) *sql.DB {
 	var databaseName string
 	if args == nil {
-		databaseName = dbName
+		databaseName = env.DbName
 	} else {
 		databaseName = args[0]
 	}
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, databaseName)
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		env.DbHost, env.DbPort, env.DbUser, env.DbPass, databaseName)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	helper.ErrorLog(err)

@@ -1,11 +1,13 @@
 package calculation
 
 import (
-	"database/sql"
+	"testify/common/env"
+	"testify/common/helper"
 	"testify/database"
-	"testify/helper"
 	"testify/model"
 	"testing"
+
+	"database/sql"
 
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/suite"
@@ -18,11 +20,12 @@ type IntTestSuite struct {
 }
 
 func TestIntTestSuite(t *testing.T) {
+	env.Load(1)
 	suite.Run(t, &IntTestSuite{})
 }
 
 func (its *IntTestSuite) SetupSuite() {
-	its.db = database.DbConnect("stockprices_test")
+	its.db = database.DbConnect("postgres_test")
 	database.DbCreateTable(its.db)
 
 	priceProvider := model.NewPriceProvider(its.db)
@@ -60,17 +63,17 @@ func (its *IntTestSuite) TestPriceIncrease_Error() {
 
 func cleanTable(its *IntTestSuite) {
 	_, err := its.db.Exec(`DELETE FROM stockprices`)
-	helper.ErrorIts(err)
+	helper.ErrorSuite(err)
 }
 
 func tearDownDatabase(its *IntTestSuite) {
 	_, err := its.db.Exec(`DROP TABLE stockprices`)
 	if err != nil {
-		helper.ErrorIts(err)
+		helper.ErrorSuite(err)
 	}
 
 	err = its.db.Close()
 	if err != nil {
-		helper.ErrorIts(err)
+		helper.ErrorSuite(err)
 	}
 }

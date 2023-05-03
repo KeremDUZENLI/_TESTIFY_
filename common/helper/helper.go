@@ -8,11 +8,11 @@ import (
 
 func ErrorLog(err error) {
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 }
 
-func ErrorIts(err error) {
+func ErrorSuite(err error) {
 	var its suite.Suite
 	if err != nil {
 		its.FailNow(err.Error())
