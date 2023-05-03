@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var postgreDB *sql.DB
+
 func DbConnect(args ...string) *sql.DB {
 	var databaseName string
 	if args == nil {
@@ -22,14 +24,14 @@ func DbConnect(args ...string) *sql.DB {
 
 	db, err := sql.Open("postgres", psqlInfo)
 	helper.ErrorLog(err)
-
 	helper.ErrorLog(db.Ping())
 
-	return db
+	postgreDB = db
+	return postgreDB
 }
 
-func DbCreateTable(db *sql.DB) {
-	stmt, err := db.Prepare(
+func DbCreateTable() {
+	stmt, err := postgreDB.Prepare(
 		`CREATE TABLE IF NOT EXISTS stockprices (
 		timestamp TIMESTAMPTZ PRIMARY KEY,
 		price DECIMAL NOT NULL
@@ -40,21 +42,21 @@ func DbCreateTable(db *sql.DB) {
 	helper.ErrorLog(err)
 }
 
-func DbSeedTable(db *sql.DB) {
+func DbSeedTable() {
 	var rowCount int
-	db.QueryRow("SELECT COUNT(*) FROM stockprices").Scan(&rowCount)
+	postgreDB.QueryRow("SELECT COUNT(*) FROM stockprices").Scan(&rowCount)
 
 	if rowCount != 5 {
 		for i := 1; i <= 5; i++ {
-			db.Exec("INSERT INTO stockprices (timestamp, price) VALUES ($1,$2)",
+			_, err := postgreDB.Exec("INSERT INTO stockprices (timestamp, price) VALUES ($1,$2)",
 				time.Now().Add(time.Duration(-i)*time.Minute), float64((6-i)*5))
+
+			helper.ErrorLog(err)
 		}
 	}
 }
 
-func DbCreateExtra(db *sql.DB) {
-	_, err := db.Exec(`CREATE DATABASE postgres_test`)
-	if err != nil {
-		println(err.Error())
-	}
+func DbCreateExtra() {
+	_, err := postgreDB.Exec(`CREATE DATABASE postgres_test`)
+	helper.ErrorPrint(err)
 }

@@ -16,7 +16,7 @@ type timeAndPrice struct {
 
 func (p *priceProvider) Latest() (*timeAndPrice, error) {
 	var data timeAndPrice
-	err := p.db.
+	err := p.databasePostgre.
 		QueryRow("SELECT * FROM stockprices ORDER BY timestamp DESC limit 1").
 		Scan(&data.Timestamp, &data.Price)
 
@@ -30,8 +30,10 @@ func (p *priceProvider) List(date time.Time) ([]*timeAndPrice, error) {
 	var timestamp time.Time
 	var price float64
 
-	rows, _ := p.db.Query("SELECT * FROM stockprices where timestamp::date = $1 ORDER BY timestamp DESC",
+	rows, err := p.databasePostgre.Query("SELECT * FROM stockprices where timestamp::date = $1 ORDER BY timestamp DESC",
 		date.Format(dateFormat))
+
+	helper.ErrorLog(err)
 
 	for rows.Next() {
 		if err := rows.Scan(&timestamp, &price); err != nil {

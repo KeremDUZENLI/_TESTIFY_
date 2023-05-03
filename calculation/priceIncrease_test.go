@@ -5,9 +5,9 @@ import (
 	"testify/common/helper"
 	"testify/database"
 	"testify/model"
-	"testing"
 
 	"database/sql"
+	"testing"
 
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/suite"
@@ -15,28 +15,28 @@ import (
 
 type IntTestSuite struct {
 	suite.Suite
-	db            *sql.DB
-	priceIncrease PriceIncrease
+	databasePostgre *sql.DB
+	priceIncrease   PriceIncrease
 }
 
 func TestIntTestSuite(t *testing.T) {
-	env.Load(1)
 	suite.Run(t, &IntTestSuite{})
 }
 
 func (its *IntTestSuite) SetupSuite() {
-	its.db = database.DbConnect("postgres_test")
-	database.DbCreateTable(its.db)
+	env.Load(1)
 
-	priceProvider := model.NewPriceProvider(its.db)
+	its.databasePostgre = database.DbConnect("postgres_test")
+	priceProvider := model.NewPriceProvider(its.databasePostgre)
 	its.priceIncrease = NewPriceIncrease(priceProvider)
+
+	database.DbCreateTable()
 }
 
 func (its *IntTestSuite) BeforeTest(suiteName, testName string) {
-	if testName == "TestPriceIncrease_Error" {
-		return
+	if testName == "TestPriceIncrease" {
+		database.DbSeedTable()
 	}
-	database.DbSeedTable(its.db)
 }
 
 func (its *IntTestSuite) TearDownTest() {
@@ -44,7 +44,8 @@ func (its *IntTestSuite) TearDownTest() {
 }
 
 func (its *IntTestSuite) TearDownSuite() {
-	tearDownDatabase(its)
+	dropTable(its)
+	closeConnection(its)
 }
 
 func (its *IntTestSuite) TestPriceIncrease() {
@@ -61,19 +62,20 @@ func (its *IntTestSuite) TestPriceIncrease_Error() {
 	its.Equal(0.0, percentage)
 }
 
+// ----------------------------------------------------------------
 func cleanTable(its *IntTestSuite) {
-	_, err := its.db.Exec(`DELETE FROM stockprices`)
+	_, err := its.databasePostgre.Exec(`DELETE FROM stockprices`)
 	helper.ErrorSuite(err)
 }
 
-func tearDownDatabase(its *IntTestSuite) {
-	_, err := its.db.Exec(`DROP TABLE stockprices`)
+func dropTable(its *IntTestSuite) {
+	_, err := its.databasePostgre.Exec(`DROP TABLE stockprices`)
 	if err != nil {
 		helper.ErrorSuite(err)
 	}
+}
 
-	err = its.db.Close()
-	if err != nil {
-		helper.ErrorSuite(err)
-	}
+func closeConnection(its *IntTestSuite) {
+	err := its.databasePostgre.Close()
+	helper.ErrorSuite(err)
 }

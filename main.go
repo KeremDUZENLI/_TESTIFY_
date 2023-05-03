@@ -14,11 +14,11 @@ import (
 )
 
 func main() {
-	db := setDatabase()
-	pp := model.NewPriceProvider(db)
-	calculator := calculation.NewPriceIncrease(pp)
+	databasePostgre := setDatabase()
+	priceProvider := model.NewPriceProvider(databasePostgre)
+	priceIncrease := calculation.NewPriceIncrease(priceProvider)
 
-	increase, err := calculator.PriceIncrease()
+	increase, err := priceIncrease.PriceIncrease()
 	helper.ErrorLog(err)
 	fmt.Println(increase)
 }
@@ -27,10 +27,9 @@ func setDatabase() *sql.DB {
 	env.Load()
 
 	db := database.DbConnect()
-
-	database.DbCreateTable(db)
-	database.DbSeedTable(db)
-	database.DbCreateExtra(db)
+	database.DbCreateTable()
+	database.DbSeedTable()
+	database.DbCreateExtra()
 
 	return db
 }

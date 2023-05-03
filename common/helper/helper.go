@@ -6,6 +6,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+func ErrorPrint(err error) {
+	if err != nil {
+		println(err.Error())
+	}
+}
+
 func ErrorLog(err error) {
 	if err != nil {
 		log.Fatal(err.Error())

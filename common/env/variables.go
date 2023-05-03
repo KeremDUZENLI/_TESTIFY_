@@ -1,8 +1,8 @@
 package env
 
 import (
-	"log"
 	"os"
+	"testify/common/helper"
 
 	"github.com/joho/godotenv"
 )
@@ -34,17 +34,12 @@ func Load(args ...int) {
 
 func envFounder(subFolder int) {
 	path, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	helper.ErrorLog(err)
 
-	for subFolder > 0 {
+	for i := subFolder; i > 0; i-- {
 		path += "/.."
-		subFolder--
 	}
 
-	path += "/.env"
-	if err := godotenv.Load(path); err != nil {
-		log.Fatal(err.Error())
-	}
+	err = godotenv.Load(path + "/.env")
+	helper.ErrorLog(err)
 }
