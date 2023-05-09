@@ -9,13 +9,13 @@ const (
 	dateFormat = "2006-01-02"
 )
 
-type timeAndPrice struct {
+type TimeAndPrice struct {
 	Timestamp time.Time
 	Price     float64
 }
 
-func (p *priceProvider) Latest() (*timeAndPrice, error) {
-	var data timeAndPrice
+func (p *priceProvider) Latest() (*TimeAndPrice, error) {
+	var data TimeAndPrice
 	err := p.databasePostgre.
 		QueryRow("SELECT * FROM stockprices ORDER BY timestamp DESC limit 1").
 		Scan(&data.Timestamp, &data.Price)
@@ -25,8 +25,8 @@ func (p *priceProvider) Latest() (*timeAndPrice, error) {
 	return &data, nil
 }
 
-func (p *priceProvider) List(date time.Time) ([]*timeAndPrice, error) {
-	var listeData []*timeAndPrice = make([]*timeAndPrice, 0)
+func (p *priceProvider) List(date time.Time) ([]*TimeAndPrice, error) {
+	var listeData []*TimeAndPrice = make([]*TimeAndPrice, 0)
 	var timestamp time.Time
 	var price float64
 
@@ -39,7 +39,7 @@ func (p *priceProvider) List(date time.Time) ([]*timeAndPrice, error) {
 		err := rows.Scan(&timestamp, &price)
 		helper.ErrorLog(err)
 
-		listeData = append(listeData, &timeAndPrice{
+		listeData = append(listeData, &TimeAndPrice{
 			Timestamp: timestamp,
 			Price:     price,
 		})

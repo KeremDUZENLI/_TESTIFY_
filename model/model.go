@@ -10,8 +10,8 @@ type priceProvider struct {
 }
 
 type PriceProvider interface {
-	Latest() (*timeAndPrice, error)
-	List(date time.Time) ([]*timeAndPrice, error)
+	Latest() (*TimeAndPrice, error)
+	List(date time.Time) ([]*TimeAndPrice, error)
 }
 
 func NewPriceProvider(db *sql.DB) PriceProvider {

@@ -1,15 +1,19 @@
 package calculation
 
 import (
+	"errors"
 	"testify/common/env"
 	"testify/common/helper"
 	"testify/database"
+	"testify/mocks"
 	"testify/model"
+	"time"
 
 	"database/sql"
 	"testing"
 
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -105,4 +109,59 @@ func dropDatabaseTest(its *IntTestSuite) {
 func closeConnection(its *IntTestSuite) {
 	err := its.databasePostgre.Close()
 	helper.ErrorSuite(err)
+}
+
+type UnitTestSuite struct {
+	suite.Suite
+}
+
+func TestUnitTestSuite(t *testing.T) {
+	suite.Run(t, &UnitTestSuite{})
+}
+
+func (uts *UnitTestSuite) TestCalculate() {
+	priceProviderMock := mocks.PriceProvider{}
+	priceIncrease := NewPriceIncrease(&priceProviderMock)
+
+	priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{
+		{
+			Timestamp: time.Now(),
+			Price:     2.0,
+		},
+		{
+			Timestamp: time.Now().Add(time.Duration(-1 * time.Minute)),
+			Price:     1.0,
+		},
+	}, nil)
+
+	actual, err := priceIncrease.PriceIncrease()
+
+	uts.Equal(100.0, actual)
+	uts.Nil(err)
+}
+
+func (uts *UnitTestSuite) TestCalculate_Error() {
+	priceProviderMock := mocks.PriceProvider{}
+	priceIncrease := NewPriceIncrease(&priceProviderMock)
+
+	priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, nil)
+
+	actual, err := priceIncrease.PriceIncrease()
+
+	uts.Equal(0.0, actual)
+	uts.EqualError(err, "not enough data")
+}
+
+func (uts *UnitTestSuite) TestCalculate_ErrorFromPriceProvider() {
+	priceProviderMock := mocks.PriceProvider{}
+	priceIncrease := NewPriceIncrease(&priceProviderMock)
+
+	expectedError := errors.New("oh my deuss")
+
+	priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, expectedError)
+
+	actual, err := priceIncrease.PriceIncrease()
+
+	uts.Equal(0.0, actual)
+	uts.Equal(expectedError, err)
 }
