@@ -113,17 +113,23 @@ func closeConnection(its *IntTestSuite) {
 
 type UnitTestSuite struct {
 	suite.Suite
+	priceIncrease     PriceIncrease
+	priceProviderMock *mocks.PriceProvider
 }
 
 func TestUnitTestSuite(t *testing.T) {
 	suite.Run(t, &UnitTestSuite{})
 }
 
-func (uts *UnitTestSuite) TestCalculate() {
+func (uts *UnitTestSuite) SetupTest() {
 	priceProviderMock := mocks.PriceProvider{}
-	priceIncrease := NewPriceIncrease(&priceProviderMock)
 
-	priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{
+	uts.priceIncrease = NewPriceIncrease(&priceProviderMock)
+	uts.priceProviderMock = &priceProviderMock
+}
+
+func (uts *UnitTestSuite) TestCalculate() {
+	uts.priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{
 		{
 			Timestamp: time.Now(),
 			Price:     2.0,
@@ -134,33 +140,27 @@ func (uts *UnitTestSuite) TestCalculate() {
 		},
 	}, nil)
 
-	actual, err := priceIncrease.PriceIncrease()
+	actual, err := uts.priceIncrease.PriceIncrease()
 
 	uts.Equal(100.0, actual)
 	uts.Nil(err)
 }
 
 func (uts *UnitTestSuite) TestCalculate_Error() {
-	priceProviderMock := mocks.PriceProvider{}
-	priceIncrease := NewPriceIncrease(&priceProviderMock)
+	uts.priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, nil)
 
-	priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, nil)
-
-	actual, err := priceIncrease.PriceIncrease()
+	actual, err := uts.priceIncrease.PriceIncrease()
 
 	uts.Equal(0.0, actual)
 	uts.EqualError(err, "not enough data")
 }
 
 func (uts *UnitTestSuite) TestCalculate_ErrorFromPriceProvider() {
-	priceProviderMock := mocks.PriceProvider{}
-	priceIncrease := NewPriceIncrease(&priceProviderMock)
-
 	expectedError := errors.New("oh my deuss")
 
-	priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, expectedError)
+	uts.priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, expectedError)
 
-	actual, err := priceIncrease.PriceIncrease()
+	actual, err := uts.priceIncrease.PriceIncrease()
 
 	uts.Equal(0.0, actual)
 	uts.Equal(expectedError, err)
