@@ -15,6 +15,7 @@ type UnitTestSuite struct {
 	suite.Suite
 	priceIncrease     PriceIncrease
 	priceProviderMock *mocks.PriceProvider
+	myErr             error
 }
 
 func TestUnitTestSuite(t *testing.T) {
@@ -22,10 +23,16 @@ func TestUnitTestSuite(t *testing.T) {
 }
 
 func (uts *UnitTestSuite) SetupTest() {
-	priceProviderMock := mocks.PriceProvider{}
+	fakeDBStruct := mocks.PriceProvider{}
 
-	uts.priceIncrease = NewPriceIncrease(&priceProviderMock)
-	uts.priceProviderMock = &priceProviderMock
+	uts.priceIncrease = NewPriceIncrease(&fakeDBStruct)
+	uts.priceProviderMock = &fakeDBStruct
+}
+
+func (uTS *UnitTestSuite) BeforeTest(suiteName, testName string) {
+	if testName == "TestCalculate_ErrorFromPriceProvider" {
+		uTS.myErr = errors.New("FAIL")
+	}
 }
 
 func (uts *UnitTestSuite) TestCalculate() {
@@ -56,12 +63,12 @@ func (uts *UnitTestSuite) TestCalculate_Error() {
 }
 
 func (uts *UnitTestSuite) TestCalculate_ErrorFromPriceProvider() {
-	expectedError := errors.New("oh my deuss")
+	// expectedError := errors.New("oh my deuss")
 
-	uts.priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, expectedError)
+	uts.priceProviderMock.On("List", mock.Anything).Return([]*model.TimeAndPrice{}, uts.myErr)
 
 	actual, err := uts.priceIncrease.PriceIncrease()
 
 	uts.Equal(0.0, actual)
-	uts.Equal(expectedError, err)
+	uts.EqualError(err, uts.myErr.Error())
 }
