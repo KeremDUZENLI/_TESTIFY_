@@ -13,8 +13,8 @@ import (
 
 type UnitTestSuite struct {
 	suite.Suite
-	priceIncrease     PriceIncrease
 	priceProviderMock *mocks.PriceProvider
+	priceIncrease     PriceIncrease
 	myErr             error
 }
 

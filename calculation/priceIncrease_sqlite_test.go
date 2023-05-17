@@ -15,6 +15,7 @@ import (
 
 type SqlTestSuite struct {
 	suite.Suite
+	databaseSqlite *sql.DB
 }
 
 func TestSqlTestSuite(t *testing.T) {
@@ -22,7 +23,7 @@ func TestSqlTestSuite(t *testing.T) {
 }
 
 func (sts *SqlTestSuite) SetupSuite() {
-	setDatabaseSql()
+	setDatabaseSql(sts)
 }
 
 func (sts *SqlTestSuite) TearDownSuite() {
@@ -33,22 +34,20 @@ func (sts *SqlTestSuite) Test_PriceIncrease() {
 }
 
 // ----------------------------------------------------------------
-func setDatabaseSql() {
-	db, err := createDatabaseSql()
-	helper.ErrorPrint(err)
+func setDatabaseSql(sts *SqlTestSuite) {
+	createDatabaseSql(sts)
 
-	createTable(db)
-	insertData(db)
-	retrieveData(db)
+	createTable(sts.databaseSqlite)
+	insertData(sts.databaseSqlite)
+	retrieveData(sts.databaseSqlite)
 }
 
-func createDatabaseSql() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./database_sqlite.db")
+func createDatabaseSql(sts *SqlTestSuite) {
+	var err error
+	sts.databaseSqlite, err = sql.Open("sqlite3", "./database_sqlite.db")
 
 	helper.ErrorLog(err)
-	helper.ErrorLog(db.Ping())
-
-	return db, err
+	helper.ErrorLog(sts.databaseSqlite.Ping())
 }
 
 func deleteDatabaseSql() {
