@@ -13,96 +13,95 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type IntTestSuite struct {
+type PostgreTestSuite struct {
 	suite.Suite
 	databasePostgre *sql.DB
 	priceIncrease   PriceIncrease
 }
 
-func TestIntTestSuite(t *testing.T) {
-	suite.Run(t, &IntTestSuite{})
+func TestPostgreTestSuite(t *testing.T) {
+	suite.Run(t, &PostgreTestSuite{})
 }
 
-func (its *IntTestSuite) SetupSuite() {
-	setDatabase(its)
+func (pTS *PostgreTestSuite) SetupSuite() {
+	databasePostgre_Set(pTS)
 
-	priceProvider := model.NewPriceProvider(its.databasePostgre)
-	its.priceIncrease = NewPriceIncrease(priceProvider)
+	priceProvider := model.NewPriceProvider(pTS.databasePostgre)
+	pTS.priceIncrease = NewPriceIncrease(priceProvider)
 }
 
-func (its *IntTestSuite) BeforeTest(suiteName, testName string) {
+func (pTS *PostgreTestSuite) BeforeTest(suiteName, testName string) {
 	if testName == "TestPriceIncrease" {
 		database.DbSeedTable()
 	}
 }
 
-func (its *IntTestSuite) TearDownTest() {
-	cleanTableTest(its)
+func (pTS *PostgreTestSuite) TearDownTest() {
+	table_CleanTest(pTS)
 }
 
-func (its *IntTestSuite) TearDownSuite() {
-	dropTableTest(its)
-	closeConnection(its)
+func (pTS *PostgreTestSuite) TearDownSuite() {
+	table_DropTest(pTS)
+	databasePostgre_Close(pTS)
 
-	dbConnect(its)
-	dropDatabaseTest(its)
-	closeConnection(its)
+	databasePostgre_Connect(pTS)
+	databasePostgre_Drop(pTS)
+	databasePostgre_Close(pTS)
 }
 
-func (its *IntTestSuite) TestPriceIncrease() {
-	percentage, err := its.priceIncrease.PriceIncrease()
+func (pTS *PostgreTestSuite) TestPriceIncrease() {
+	percentage, err := pTS.priceIncrease.PriceIncrease()
 
-	its.Nil(err)
-	its.Equal(25.0, percentage)
+	pTS.Nil(err)
+	pTS.Equal(25.0, percentage)
 }
 
-func (its *IntTestSuite) TestPriceIncrease_Error() {
-	percentage, err := its.priceIncrease.PriceIncrease()
+func (pTS *PostgreTestSuite) TestPriceIncrease_Error() {
+	percentage, err := pTS.priceIncrease.PriceIncrease()
 
-	its.EqualError(err, "not enough data")
-	its.Equal(0.0, percentage)
+	pTS.EqualError(err, "not enough data")
+	pTS.Equal(0.0, percentage)
 }
 
 // ----------------------------------------------------------------
-func setDatabase(its *IntTestSuite) {
-	dbConnect(its)
-	createDatabaseTest(its)
+func databasePostgre_Set(pTS *PostgreTestSuite) {
+	databasePostgre_Connect(pTS)
+	databasePostgre_Create(pTS)
 
-	dbConnectTest(its)
+	databasePostgre_Connect(pTS, "postgres_test")
 	database.DbCreateTable()
 }
 
-func dbConnect(its *IntTestSuite) {
+func databasePostgre_Connect(pTS *PostgreTestSuite, args ...string) {
 	env.Load(1)
-	its.databasePostgre = database.DbConnect()
+	if args == nil {
+		pTS.databasePostgre = database.DbConnect()
+	} else {
+		pTS.databasePostgre = database.DbConnect(args[0])
+	}
 }
 
-func dbConnectTest(its *IntTestSuite) {
-	env.Load(1)
-	its.databasePostgre = database.DbConnect("postgres_test")
-}
-
-func createDatabaseTest(its *IntTestSuite) {
-	_, err := its.databasePostgre.Exec(`CREATE DATABASE postgres_test`)
+func databasePostgre_Create(pTS *PostgreTestSuite) {
+	_, err := pTS.databasePostgre.Exec(`CREATE DATABASE postgres_test`)
 	helper.ErrorPrint(err)
 }
 
-func cleanTableTest(its *IntTestSuite) {
-	_, err := its.databasePostgre.Exec(`DELETE FROM stockprices`)
+func databasePostgre_Drop(pTS *PostgreTestSuite) {
+	_, err := pTS.databasePostgre.Exec(`DROP DATABASE postgres_test`)
 	helper.ErrorSuite(err)
 }
 
-func dropTableTest(its *IntTestSuite) {
-	_, err := its.databasePostgre.Exec(`DROP TABLE stockprices`)
+func databasePostgre_Close(pTS *PostgreTestSuite) {
+	err := pTS.databasePostgre.Close()
 	helper.ErrorSuite(err)
 }
 
-func dropDatabaseTest(its *IntTestSuite) {
-	_, err := its.databasePostgre.Exec(`DROP DATABASE postgres_test`)
+func table_CleanTest(pTS *PostgreTestSuite) {
+	_, err := pTS.databasePostgre.Exec(`DELETE FROM stockprices`)
 	helper.ErrorSuite(err)
 }
 
-func closeConnection(its *IntTestSuite) {
-	err := its.databasePostgre.Close()
+func table_DropTest(pTS *PostgreTestSuite) {
+	_, err := pTS.databasePostgre.Exec(`DROP TABLE stockprices`)
 	helper.ErrorSuite(err)
 }

@@ -3,9 +3,11 @@
 package mocks
 
 import (
-	"testify/model"
-	
+	model "testify/model"
+
 	mock "github.com/stretchr/testify/mock"
+
+	sql "database/sql"
 
 	time "time"
 )
@@ -41,25 +43,32 @@ func (_m *PriceProvider) Latest() (*model.TimeAndPrice, error) {
 	return r0, r1
 }
 
-// List provides a mock function with given fields: date
-func (_m *PriceProvider) List(date time.Time, args ...*sql.DB) ([]*TimeAndPrice, error) {
-	ret := _m.Called(date)
+// List provides a mock function with given fields: date, args
+func (_m *PriceProvider) List(date time.Time, args ...*sql.DB) ([]*model.TimeAndPrice, error) {
+	_va := make([]interface{}, len(args))
+	for _i := range args {
+		_va[_i] = args[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, date)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 []*model.TimeAndPrice
 	var r1 error
-	if rf, ok := ret.Get(0).(func(time.Time) ([]*model.TimeAndPrice, error)); ok {
-		return rf(date)
+	if rf, ok := ret.Get(0).(func(time.Time, ...*sql.DB) ([]*model.TimeAndPrice, error)); ok {
+		return rf(date, args...)
 	}
-	if rf, ok := ret.Get(0).(func(time.Time) []*model.TimeAndPrice); ok {
-		r0 = rf(date)
+	if rf, ok := ret.Get(0).(func(time.Time, ...*sql.DB) []*model.TimeAndPrice); ok {
+		r0 = rf(date, args...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.TimeAndPrice)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(time.Time) error); ok {
-		r1 = rf(date)
+	if rf, ok := ret.Get(1).(func(time.Time, ...*sql.DB) error); ok {
+		r1 = rf(date, args...)
 	} else {
 		r1 = ret.Error(1)
 	}

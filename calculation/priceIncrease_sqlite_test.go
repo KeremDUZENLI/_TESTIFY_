@@ -16,64 +16,77 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type SqlTestSuite struct {
+type SqliteTestSuite struct {
 	suite.Suite
 	databaseSqlite *sql.DB
 	priceIncrease  PriceIncrease
 }
 
-func TestSqlTestSuite(t *testing.T) {
-	suite.Run(t, &SqlTestSuite{})
+func TestSqliteTestSuite(t *testing.T) {
+	suite.Run(t, &SqliteTestSuite{})
 }
 
-func (sts *SqlTestSuite) SetupSuite() {
-	setDatabaseSql(sts)
+func (sTS *SqliteTestSuite) SetupSuite() {
+	databaseSqlite_Set(sTS)
 
-	priceProvider := model.NewPriceProvider(sts.databaseSqlite)
-	sts.priceIncrease = NewPriceIncrease(priceProvider)
+	priceProvider := model.NewPriceProvider(sTS.databaseSqlite)
+	sTS.priceIncrease = NewPriceIncrease(priceProvider)
 }
 
-func (sts *SqlTestSuite) TearDownSuite() {
-	deleteDatabaseSql()
+func (sTS *SqliteTestSuite) BeforeTest(suiteName, testName string) {
+	if testName == "Test_PriceIncrease" {
+		database.DbSeedTable(sTS.databaseSqlite)
+	}
 }
 
-func (sts *SqlTestSuite) Test_PriceIncrease() {
-	percentage, err := sts.priceIncrease.PriceIncrease(sts.databaseSqlite)
+func (sTS *SqliteTestSuite) TearDownTest() {
+	table_Clean(sTS)
+}
 
-	fmt.Println("percentage, err: ", percentage, err)
+func (sTS *SqliteTestSuite) TearDownSuite() {
+	databaseSqlite_Delete()
+}
 
-	sts.Nil(err)
-	sts.Equal(25.0, percentage)
+func (sTS *SqliteTestSuite) Test_PriceIncrease() {
+	percentage, err := sTS.priceIncrease.PriceIncrease(sTS.databaseSqlite)
+
+	sTS.Nil(err)
+	sTS.Equal(25.0, percentage)
+}
+
+func (sTS *SqliteTestSuite) Test_PriceIncrease_Error() {
+	percentage, err := sTS.priceIncrease.PriceIncrease(sTS.databaseSqlite)
+
+	sTS.EqualError(err, "not enough data")
+	sTS.Equal(0.0, percentage)
 }
 
 // ----------------------------------------------------------------
-func setDatabaseSql(sts *SqlTestSuite) {
-	createDatabaseSql(sts)
-
-	// createTable(sts.databaseSqlite)
-	database.DbCreateTable(sts.databaseSqlite)
-
-	// insertData(sts.databaseSqlite)
-	database.DbSeedTable(sts.databaseSqlite)
-
-	retrieveData(sts.databaseSqlite)
+func databaseSqlite_Set(sTS *SqliteTestSuite) {
+	databaseSqlite_Create(sTS)
+	database.DbCreateTable(sTS.databaseSqlite)
 }
 
-func createDatabaseSql(sts *SqlTestSuite) {
+func databaseSqlite_Create(sTS *SqliteTestSuite) {
 	var err error
-	sts.databaseSqlite, err = sql.Open("sqlite3", "./database_sqlite.db")
+	sTS.databaseSqlite, err = sql.Open("sqlite3", "./database_sqlite.db")
 
 	helper.ErrorLog(err)
-	helper.ErrorLog(sts.databaseSqlite.Ping())
+	helper.ErrorLog(sTS.databaseSqlite.Ping())
 }
 
-func deleteDatabaseSql() {
+func databaseSqlite_Delete() {
 	err := os.Remove("./database_sqlite.db")
 	helper.ErrorPrint(err)
 }
 
-func createTable(db *sql.DB) {
-	_, err := db.Exec(
+func table_Clean(sTS *SqliteTestSuite) {
+	_, err := sTS.databaseSqlite.Exec(`DELETE FROM stockprices`)
+	helper.ErrorPrint(err)
+}
+
+func table_Create(sTS *SqliteTestSuite) {
+	_, err := sTS.databaseSqlite.Exec(
 		`CREATE TABLE IF NOT EXISTS stockprices (
 		timestamp timestamp,
 		price float64
@@ -82,8 +95,8 @@ func createTable(db *sql.DB) {
 	helper.ErrorLog(err)
 }
 
-func insertData(db *sql.DB) {
-	stmt, err := db.Prepare("INSERT INTO stockprices(timestamp, price) VALUES(?, ?)")
+func table_Insert(sTS *SqliteTestSuite) {
+	stmt, err := sTS.databaseSqlite.Prepare("INSERT INTO stockprices(timestamp, price) VALUES(?, ?)")
 	helper.ErrorLog(err)
 	defer stmt.Close()
 
@@ -95,8 +108,8 @@ func insertData(db *sql.DB) {
 	helper.ErrorLog(err)
 }
 
-func retrieveData(db *sql.DB) {
-	rows, err := db.Query("SELECT * FROM stockprices")
+func table_Retrieve(sTS *SqliteTestSuite) {
+	rows, err := sTS.databaseSqlite.Query("SELECT * FROM stockprices")
 	helper.ErrorLog(err)
 	defer rows.Close()
 

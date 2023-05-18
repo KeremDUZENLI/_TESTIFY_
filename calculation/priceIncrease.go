@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-type PriceIncrease interface {
-	PriceIncrease(args ...*sql.DB) (float64, error)
-}
-
 type priceIncrease struct {
 	PriceProvider model.PriceProvider
+}
+
+type PriceIncrease interface {
+	PriceIncrease(args ...*sql.DB) (float64, error)
 }
 
 func NewPriceIncrease(pp model.PriceProvider) PriceIncrease {
