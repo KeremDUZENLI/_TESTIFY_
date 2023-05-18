@@ -48,14 +48,14 @@ func (sTS *SqliteTestSuite) TearDownSuite() {
 }
 
 func (sTS *SqliteTestSuite) Test_PriceIncrease() {
-	percentage, err := sTS.priceIncrease.PriceIncrease(sTS.databaseSqlite)
+	percentage, err := sTS.priceIncrease.PriceIncrease()
 
 	sTS.Nil(err)
 	sTS.Equal(25.0, percentage)
 }
 
 func (sTS *SqliteTestSuite) Test_PriceIncrease_Error() {
-	percentage, err := sTS.priceIncrease.PriceIncrease(sTS.databaseSqlite)
+	percentage, err := sTS.priceIncrease.PriceIncrease()
 
 	sTS.EqualError(err, "not enough data")
 	sTS.Equal(0.0, percentage)

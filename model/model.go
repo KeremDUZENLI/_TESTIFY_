@@ -6,16 +6,16 @@ import (
 )
 
 type priceProvider struct {
-	databasePostgre *sql.DB
+	database *sql.DB
 }
 
 type PriceProvider interface {
 	Latest() (*TimeAndPrice, error)
-	List(date time.Time, args ...*sql.DB) ([]*TimeAndPrice, error)
+	List(date time.Time) ([]*TimeAndPrice, error)
 }
 
 func NewPriceProvider(db *sql.DB) PriceProvider {
 	return &priceProvider{
-		databasePostgre: db,
+		database: db,
 	}
 }

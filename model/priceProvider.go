@@ -1,11 +1,12 @@
 package model
 
 import (
-	"database/sql"
+	"fmt"
 	"testify/common/helper"
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -19,7 +20,7 @@ type TimeAndPrice struct {
 
 func (p *priceProvider) Latest() (*TimeAndPrice, error) {
 	var data TimeAndPrice
-	err := p.databasePostgre.
+	err := p.database.
 		QueryRow("SELECT * FROM stockprices ORDER BY timestamp DESC limit 1").
 		Scan(&data.Timestamp, &data.Price)
 
@@ -28,22 +29,23 @@ func (p *priceProvider) Latest() (*TimeAndPrice, error) {
 	return &data, nil
 }
 
-func (p *priceProvider) List(date time.Time, args ...*sql.DB) ([]*TimeAndPrice, error) {
-	var databaseName *sql.DB
+func (p *priceProvider) List(date time.Time) ([]*TimeAndPrice, error) {
 	var query string
-	if args == nil {
-		databaseName = p.databasePostgre
+
+	switch p.database.Driver().(type) {
+	case *pq.Driver:
 		query = "SELECT * FROM stockprices where timestamp::date = $1 ORDER BY timestamp DESC"
-	} else {
-		databaseName = args[0]
+	case *sqlite3.SQLiteDriver:
 		query = "SELECT * FROM stockprices WHERE strftime('%Y-%m-%d', timestamp) = $1 ORDER BY timestamp DESC"
+	default:
+		return nil, fmt.Errorf("unsupported database driver")
 	}
 
 	var listeData []*TimeAndPrice = make([]*TimeAndPrice, 0)
 	var timestamp pq.NullTime
 	var price float64
 
-	rows, err := databaseName.Query(query,
+	rows, err := p.database.Query(query,
 		date.Format(dateFormat))
 
 	helper.ErrorLog(err)
