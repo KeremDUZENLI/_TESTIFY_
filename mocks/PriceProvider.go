@@ -3,8 +3,8 @@
 package mocks
 
 import (
-	"testify/model"
-	
+	model "testify/model"
+
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"

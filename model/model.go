@@ -6,7 +6,7 @@ import (
 )
 
 type priceProvider struct {
-	databasePostgre *sql.DB
+	database *sql.DB
 }
 
 type PriceProvider interface {
@@ -16,6 +16,6 @@ type PriceProvider interface {
 
 func NewPriceProvider(db *sql.DB) PriceProvider {
 	return &priceProvider{
-		databasePostgre: db,
+		database: db,
 	}
 }

@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-type PriceIncrease interface {
-	PriceIncrease() (float64, error)
-}
-
 type priceIncrease struct {
 	PriceProvider model.PriceProvider
+}
+
+type PriceIncrease interface {
+	PriceIncrease() (float64, error)
 }
 
 func NewPriceIncrease(pp model.PriceProvider) PriceIncrease {
