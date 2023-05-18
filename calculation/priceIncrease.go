@@ -1,13 +1,14 @@
 package calculation
 
 import (
+	"database/sql"
 	"errors"
 	"testify/model"
 	"time"
 )
 
 type PriceIncrease interface {
-	PriceIncrease() (float64, error)
+	PriceIncrease(args ...*sql.DB) (float64, error)
 }
 
 type priceIncrease struct {
@@ -20,8 +21,8 @@ func NewPriceIncrease(pp model.PriceProvider) PriceIncrease {
 	}
 }
 
-func (pi *priceIncrease) PriceIncrease() (float64, error) {
-	prices, err := pi.PriceProvider.List(time.Now())
+func (pi *priceIncrease) PriceIncrease(args ...*sql.DB) (float64, error) {
+	prices, err := pi.PriceProvider.List(time.Now(), args...)
 	if err != nil {
 		return 0.0, err
 	}

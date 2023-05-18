@@ -5,17 +5,21 @@ import (
 	"fmt"
 	"os"
 	"testify/common/helper"
+	"testify/database"
+	"testify/model"
 	"testing"
 	"time"
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 )
 
 type SqlTestSuite struct {
 	suite.Suite
 	databaseSqlite *sql.DB
+	priceIncrease  PriceIncrease
 }
 
 func TestSqlTestSuite(t *testing.T) {
@@ -24,6 +28,9 @@ func TestSqlTestSuite(t *testing.T) {
 
 func (sts *SqlTestSuite) SetupSuite() {
 	setDatabaseSql(sts)
+
+	priceProvider := model.NewPriceProvider(sts.databaseSqlite)
+	sts.priceIncrease = NewPriceIncrease(priceProvider)
 }
 
 func (sts *SqlTestSuite) TearDownSuite() {
@@ -31,14 +38,24 @@ func (sts *SqlTestSuite) TearDownSuite() {
 }
 
 func (sts *SqlTestSuite) Test_PriceIncrease() {
+	percentage, err := sts.priceIncrease.PriceIncrease(sts.databaseSqlite)
+
+	fmt.Println("percentage, err: ", percentage, err)
+
+	sts.Nil(err)
+	sts.Equal(25.0, percentage)
 }
 
 // ----------------------------------------------------------------
 func setDatabaseSql(sts *SqlTestSuite) {
 	createDatabaseSql(sts)
 
-	createTable(sts.databaseSqlite)
-	insertData(sts.databaseSqlite)
+	// createTable(sts.databaseSqlite)
+	database.DbCreateTable(sts.databaseSqlite)
+
+	// insertData(sts.databaseSqlite)
+	database.DbSeedTable(sts.databaseSqlite)
+
 	retrieveData(sts.databaseSqlite)
 }
 
@@ -55,64 +72,41 @@ func deleteDatabaseSql() {
 	helper.ErrorPrint(err)
 }
 
-func createTable(db *sql.DB) error {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS stockprices (
+func createTable(db *sql.DB) {
+	_, err := db.Exec(
+		`CREATE TABLE IF NOT EXISTS stockprices (
 		timestamp timestamp,
 		price float64
 	)`)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	helper.ErrorLog(err)
 }
 
-func insertData(db *sql.DB) error {
+func insertData(db *sql.DB) {
 	stmt, err := db.Prepare("INSERT INTO stockprices(timestamp, price) VALUES(?, ?)")
-	if err != nil {
-		return err
-	}
-
+	helper.ErrorLog(err)
 	defer stmt.Close()
 
 	time := time.Now()
 	_, err = stmt.Exec(time, 25)
-	if err != nil {
-		return err
-	}
+	helper.ErrorLog(err)
 
 	_, err = stmt.Exec(time, 30)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	helper.ErrorLog(err)
 }
 
-func retrieveData(db *sql.DB) error {
+func retrieveData(db *sql.DB) {
 	rows, err := db.Query("SELECT * FROM stockprices")
-	if err != nil {
-		return err
-	}
+	helper.ErrorLog(err)
 	defer rows.Close()
 
 	for rows.Next() {
-		var timestamp time.Time
-		var price float64
+		var timestamp any
+		var price decimal.Decimal
 
-		err := rows.Scan(&timestamp, &price)
-		if err != nil {
-			return err
-		}
-
+		helper.ErrorLog(rows.Scan(&timestamp, &price))
 		fmt.Printf("timestamp: %v, price: %v\n", timestamp, price)
 	}
 
-	err = rows.Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	helper.ErrorLog(rows.Err())
 }

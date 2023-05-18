@@ -42,7 +42,7 @@ func (_m *PriceProvider) Latest() (*model.TimeAndPrice, error) {
 }
 
 // List provides a mock function with given fields: date
-func (_m *PriceProvider) List(date time.Time) ([]*model.TimeAndPrice, error) {
+func (_m *PriceProvider) List(date time.Time, args ...*sql.DB) ([]*TimeAndPrice, error) {
 	ret := _m.Called(date)
 
 	var r0 []*model.TimeAndPrice
