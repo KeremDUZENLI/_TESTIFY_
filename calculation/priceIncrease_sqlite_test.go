@@ -71,17 +71,12 @@ func databaseSqlite_Create(sTS *SqliteTestSuite) {
 	var err error
 	sTS.databaseSqlite, err = sql.Open("sqlite3", "./database_sqlite.db")
 
-	helper.ErrorLog(err)
-	helper.ErrorLog(sTS.databaseSqlite.Ping())
+	helper.ErrorSuite(err)
+	helper.ErrorSuite(sTS.databaseSqlite.Ping())
 }
 
 func databaseSqlite_Delete() {
 	err := os.Remove("./database_sqlite.db")
-	helper.ErrorPrint(err)
-}
-
-func table_Clean(sTS *SqliteTestSuite) {
-	_, err := sTS.databaseSqlite.Exec(`DELETE FROM stockprices`)
 	helper.ErrorPrint(err)
 }
 
@@ -92,34 +87,39 @@ func table_Create(sTS *SqliteTestSuite) {
 		price float64
 	)`)
 
-	helper.ErrorLog(err)
+	helper.ErrorSuite(err)
 }
 
 func table_Insert(sTS *SqliteTestSuite) {
 	stmt, err := sTS.databaseSqlite.Prepare("INSERT INTO stockprices(timestamp, price) VALUES(?, ?)")
-	helper.ErrorLog(err)
+	helper.ErrorSuite(err)
 	defer stmt.Close()
 
 	time := time.Now()
 	_, err = stmt.Exec(time, 25)
-	helper.ErrorLog(err)
+	helper.ErrorSuite(err)
 
 	_, err = stmt.Exec(time, 30)
-	helper.ErrorLog(err)
+	helper.ErrorSuite(err)
 }
 
 func table_Retrieve(sTS *SqliteTestSuite) {
 	rows, err := sTS.databaseSqlite.Query("SELECT * FROM stockprices")
-	helper.ErrorLog(err)
+	helper.ErrorSuite(err)
 	defer rows.Close()
 
 	for rows.Next() {
 		var timestamp any
 		var price decimal.Decimal
 
-		helper.ErrorLog(rows.Scan(&timestamp, &price))
+		helper.ErrorSuite(rows.Scan(&timestamp, &price))
 		fmt.Printf("timestamp: %v, price: %v\n", timestamp, price)
 	}
 
-	helper.ErrorLog(rows.Err())
+	helper.ErrorSuite(rows.Err())
+}
+
+func table_Clean(sTS *SqliteTestSuite) {
+	_, err := sTS.databaseSqlite.Exec(`DELETE FROM stockprices`)
+	helper.ErrorSuite(err)
 }
