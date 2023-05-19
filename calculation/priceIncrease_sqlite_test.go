@@ -36,18 +36,22 @@ func (sTS *SqliteTestSuite) SetupSuite() {
 func (sTS *SqliteTestSuite) BeforeTest(suiteName, testName string) {
 	if testName == "Test_PriceIncrease" {
 		database.DbSeedTable(sTS.databaseSqlite)
+		// sTS.table_Insert()
 	}
 }
 
 func (sTS *SqliteTestSuite) TearDownTest() {
-	table_Clean(sTS)
+	sTS.table_Clean()
 }
 
 func (sTS *SqliteTestSuite) TearDownSuite() {
+	sTS.table_Drop()
 	databaseSqlite_Delete()
 }
 
 func (sTS *SqliteTestSuite) Test_PriceIncrease() {
+	sTS.table_Retrieve()
+
 	percentage, err := sTS.priceIncrease.PriceIncrease()
 
 	sTS.Nil(err)
@@ -65,6 +69,7 @@ func (sTS *SqliteTestSuite) Test_PriceIncrease_Error() {
 func databaseSqlite_Set(sTS *SqliteTestSuite) {
 	databaseSqlite_Create(sTS)
 	database.DbCreateTable(sTS.databaseSqlite)
+	// sTS.table_Create()
 }
 
 func databaseSqlite_Create(sTS *SqliteTestSuite) {
@@ -80,7 +85,8 @@ func databaseSqlite_Delete() {
 	helper.ErrorPrint(err)
 }
 
-func table_Create(sTS *SqliteTestSuite) {
+// ----------------------------------------------------------------
+func (sTS *SqliteTestSuite) table_Create() {
 	_, err := sTS.databaseSqlite.Exec(
 		`CREATE TABLE IF NOT EXISTS stockprices (
 		timestamp timestamp,
@@ -90,36 +96,42 @@ func table_Create(sTS *SqliteTestSuite) {
 	helper.ErrorSuite(err)
 }
 
-func table_Insert(sTS *SqliteTestSuite) {
-	stmt, err := sTS.databaseSqlite.Prepare("INSERT INTO stockprices(timestamp, price) VALUES(?, ?)")
-	helper.ErrorSuite(err)
-	defer stmt.Close()
+func (sTS *SqliteTestSuite) table_Insert() {
+	for i := 1; i <= 5; i++ {
+		price := float64((6 - i) * 5)
+		timestamp := time.Now().Add(time.Duration(-i) * time.Minute)
 
-	time := time.Now()
-	_, err = stmt.Exec(time, 25)
-	helper.ErrorSuite(err)
-
-	_, err = stmt.Exec(time, 30)
-	helper.ErrorSuite(err)
+		_, err := sTS.databaseSqlite.Exec("INSERT INTO stockprices (timestamp, price) VALUES (?, ?)", timestamp, price)
+		helper.ErrorSuite(err)
+	}
 }
 
-func table_Retrieve(sTS *SqliteTestSuite) {
+func (sTS *SqliteTestSuite) table_Retrieve() {
 	rows, err := sTS.databaseSqlite.Query("SELECT * FROM stockprices")
 	helper.ErrorSuite(err)
 	defer rows.Close()
 
-	for rows.Next() {
-		var timestamp any
-		var price decimal.Decimal
-
-		helper.ErrorSuite(rows.Scan(&timestamp, &price))
-		fmt.Printf("timestamp: %v, price: %v\n", timestamp, price)
-	}
-
+	printFromSqlite(rows)
 	helper.ErrorSuite(rows.Err())
 }
 
-func table_Clean(sTS *SqliteTestSuite) {
-	_, err := sTS.databaseSqlite.Exec(`DELETE FROM stockprices`)
+func (sTS *SqliteTestSuite) table_Clean() {
+	_, err := sTS.databaseSqlite.Exec("DELETE FROM stockprices")
 	helper.ErrorSuite(err)
+}
+
+func (sTS *SqliteTestSuite) table_Drop() {
+	_, err := sTS.databaseSqlite.Exec("DROP TABLE IF EXISTS stockprices")
+	helper.ErrorSuite(err)
+}
+
+// ----------------------------------------------------------------
+func printFromSqlite(lines *sql.Rows) {
+	for lines.Next() {
+		var timestamp any
+		var price decimal.Decimal
+
+		helper.ErrorSuite(lines.Scan(&timestamp, &price))
+		fmt.Printf("timestamp: %v, price: %v\n", timestamp, price)
+	}
 }
